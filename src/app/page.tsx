@@ -1,103 +1,140 @@
-import Image from "next/image";
+'use client';
+
+import { useState } from 'react';
+import { trpc } from '@/lib/trpc';
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [age, setAge] = useState<number | undefined>(undefined);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  // tRPC queries and mutations
+  const helloQuery = trpc.general.hello.useQuery();
+  const usersQuery = trpc.user.getAll.useQuery();
+  const createUserMutation = trpc.user.create.useMutation({
+    onSuccess: () => {
+      usersQuery.refetch();
+      setName('');
+      setEmail('');
+      setAge(undefined);
+    },
+  });
+  const deleteUserMutation = trpc.user.delete.useMutation({
+    onSuccess: () => {
+      usersQuery.refetch();
+    },
+  });
+
+  const handleCreateUser = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (name && email) {
+      createUserMutation.mutate({ name, email, age });
+    }
+  };
+
+  const handleDeleteUser = (id: string) => {
+    deleteUserMutation.mutate({ id });
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8">
+      <div className="max-w-4xl mx-auto">
+        <h1 className="text-4xl font-bold text-gray-900 mb-8 text-center">
+          tRPC + Next.js + MongoDB Test
+        </h1>
+        
+        {/* Hello World Test */}
+        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+          <h2 className="text-2xl font-semibold text-gray-800 mb-4">Hello World API Test</h2>
+          <div className="bg-gray-50 p-4 rounded">
+            {helloQuery.isLoading ? (
+              <p className="text-gray-600">Loading...</p>
+            ) : helloQuery.error ? (
+              <p className="text-red-600">Error: {helloQuery.error.message}</p>
+            ) : (
+              <p className="text-green-600 font-medium">{helloQuery.data?.message}</p>
+            )}
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+        {/* User CRUD Test */}
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h2 className="text-2xl font-semibold text-gray-800 mb-6">User CRUD Operations</h2>
+          
+          {/* Create User Form */}
+          <form onSubmit={handleCreateUser} className="mb-8 p-4 bg-gray-50 rounded">
+            <h3 className="text-lg font-medium text-gray-700 mb-4">Create New User</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <input
+                type="text"
+                placeholder="Name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              />
+              <input
+                type="email"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              />
+              <input
+                type="number"
+                placeholder="Age (optional)"
+                value={age || ''}
+                onChange={(e) => setAge(e.target.value ? parseInt(e.target.value) : undefined)}
+                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={createUserMutation.isPending}
+              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50"
+            >
+              {createUserMutation.isPending ? 'Creating...' : 'Create User'}
+            </button>
+            {createUserMutation.error && (
+              <p className="text-red-600 mt-2">{createUserMutation.error.message}</p>
+            )}
+          </form>
+
+          {/* Users List */}
+          <div>
+            <h3 className="text-lg font-medium text-gray-700 mb-4">All Users</h3>
+            {usersQuery.isLoading ? (
+              <p className="text-gray-600">Loading users...</p>
+            ) : usersQuery.error ? (
+              <p className="text-red-600">Error: {usersQuery.error.message}</p>
+            ) : (
+              <div className="space-y-3">
+                {usersQuery.data?.length === 0 ? (
+                  <p className="text-gray-500">No users found. Create one above!</p>
+                ) : (
+                  usersQuery.data?.map((user) => (
+                    <div key={user._id} className="flex items-center justify-between p-3 bg-gray-50 rounded">
+                      <div>
+                        <p className="font-medium text-gray-900">{user.name}</p>
+                        <p className="text-gray-600">{user.email}</p>
+                        {user.age && <p className="text-gray-500">Age: {user.age}</p>}
+                      </div>
+                      <button
+                        onClick={() => handleDeleteUser(user._id)}
+                        disabled={deleteUserMutation.isPending}
+                        className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 disabled:opacity-50"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
