@@ -1,14 +1,19 @@
 import mongoose, { Schema, Document } from 'mongoose';
+import { z } from 'zod';
 
-export interface IUser extends Document {
-  name: string;
-  email: string;
-  age?: number;
-  createdAt: Date;
-  updatedAt: Date;
-}
+// Zod schema for User validation
+export const UserZodSchema = z.object({
+  name: z.string().min(1, 'Name is required').max(100, 'Name cannot be more than 100 characters').trim(),
+  email: z.string().email('Please enter a valid email').toLowerCase().trim(),
+  age: z.number().min(0, 'Age cannot be negative').max(150, 'Age cannot be more than 150').optional(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+});
 
-const UserSchema: Schema = new Schema(
+// Infer TypeScript type from Zod schema
+export type IUser = z.infer<typeof UserZodSchema>;
+
+const UserSchema: Schema<IUser> = new Schema<IUser>(
   {
     name: {
       type: String,

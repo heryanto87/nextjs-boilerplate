@@ -1,18 +1,15 @@
 import { z } from 'zod';
+import { UserZodSchema } from '../collections/User';
+
+// Base user schema without timestamps for input operations
+const baseUserSchema = UserZodSchema.omit({ createdAt: true, updatedAt: true });
 
 // Input schemas for user operations
-export const createUserSchema = z.object({
-  name: z.string().min(1, 'Name is required').max(100, 'Name cannot be more than 100 characters'),
-  email: z.string().email('Please enter a valid email'),
-  age: z.number().min(0, 'Age cannot be negative').max(150, 'Age cannot be more than 150').optional(),
-});
+export const createUserSchema = baseUserSchema;
 
 export const updateUserSchema = z.object({
   id: z.string().min(1, 'User ID is required'),
-  name: z.string().min(1, 'Name is required').max(100, 'Name cannot be more than 100 characters').optional(),
-  email: z.string().email('Please enter a valid email').optional(),
-  age: z.number().min(0, 'Age cannot be negative').max(150, 'Age cannot be more than 150').optional(),
-});
+}).merge(baseUserSchema.partial());
 
 export const getUserSchema = z.object({
   id: z.string().min(1, 'User ID is required'),
@@ -25,12 +22,7 @@ export const deleteUserSchema = z.object({
 // Output schemas
 export const userOutputSchema = z.object({
   _id: z.string(),
-  name: z.string(),
-  email: z.string(),
-  age: z.number().optional(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
-});
+}).merge(UserZodSchema);
 
 export const usersListOutputSchema = z.array(userOutputSchema);
 
